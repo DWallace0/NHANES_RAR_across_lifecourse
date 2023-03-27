@@ -15,9 +15,14 @@ Minute-epoch 2011 PAMS actigraphy data explainer: https://wwwn.cdc.gov/Nchs/Nhan
 
 The provided analysis code is divided as follows for the different data processing and analysis steps:
 
-0.	Data download, pre-processing, imputation with “accelmissing”, and creation of RAR metrics using “nparACT” – code to do this has the filename “0_NparACT_accelmissing.R”; the resulting data is in “Step0_data” with the following names:
-a.	“accelmissing_out2” files = contains data as nested lists from raw timeseries data, formatted for accelmissing package
-b.	“acceldata” files = activity data (PA) combined with day of week info (label), wearing / offwrist information (flag), and demographic info (age, sex, race/ethnicity) (demo) together in a dataframe
-c.	“actdata2” files = the results after filtering the “acceldata” file through accelmissing to create a missing flag matrix and provide some information on amount missingness; data filtered for quality / number of valid days. This is the file used for imputation. 
-d.	“sensitivity_IDs” file = subset of IDs using more stringent criteria where valid day defined as at least 20 hours of wearing and 6+ valid days (compared to the original valid day defined as 16 hours of wearing and 4+ valid days)
-e.	“accelimp” file = the imputed datasets after running accelmissing; these data will be fed into nparact to derive the RAR metrics
+Data download, pre-processing, imputation with “accelmissing”, and creation of RAR metrics using “nparACT” – code to do this has the filename “0_NparACT_accelmissing.R”; the resulting data has the following names:
+
+- “accelmissing_out2” files = contains data as nested lists from raw timeseries data, formatted for accelmissing package
+
+- “acceldata” files = activity data (PA) combined with day of week info (label), wearing / offwrist information (flag), and demographic info (age, sex, race/ethnicity) (demo) together in a dataframe
+
+- “actdata2” files = the results after filtering the “acceldata” file through accelmissing to create a missing flag matrix and provide some information on amount missingness; data filtered for quality / number of valid days. This is the file used for imputation. 
+
+- “sensitivity_IDs” file = subset of IDs using more stringent criteria where valid day defined as at least 20 hours of wearing and 6+ valid days (compared to the original valid day defined as 16 hours of wearing and 4+ valid days)
+
+- “accelimp” file = the imputed datasets after running accelmissing; these data will be fed into nparact to derive the RAR metrics
