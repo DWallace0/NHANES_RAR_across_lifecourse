@@ -1,5 +1,5 @@
 # NHANES_RAR_across_lifecourse
-Code and data for the paper: Rest-activity rhythms across the lifespan: cross-sectional findings from the U.S.-representative National Health and Nutrition Examination Survey (NHANES) 
+Code for the paper: Rest-activity rhythms across the lifespan: cross-sectional findings from the U.S.-representative National Health and Nutrition Examination Survey (NHANES) 
 
 In addition to demographic and physical exam information, this analysis used data from the physical activity monitor (PAMS) component of the 2011-2012 and 2013-2104 NHANES exams. Minute-epoch and header data for this data was used:
 
