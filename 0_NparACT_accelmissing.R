@@ -1,4 +1,3 @@
-setwd("C:/Users/Danielle/OneDrive - Mass General Brigham/Desktop/R code_NHANES analysis/GitHub repo")
 #########################################################
 # 2023 - Danielle A. Wallace
 #Rest-activity rhythms across the lifespan: 
@@ -18,13 +17,14 @@ setwd("C:/Users/Danielle/OneDrive - Mass General Brigham/Desktop/R code_NHANES a
 #each .csv file in the folder was then looped over
 
 #example of reading in the 2011 minute-epoch data that has been saved to a USB (E: drive)
+library(haven)
 act <- read_xpt("E:/PAXMIN_G.XPT") 
 #example of splitting by ID and writing to individual files
 for(i in unique(act$SEQN)) {
   ID <- subset(act, SEQN == i)
   write.csv(ID, file = paste0("E:/individual_files_2011/",i,".csv"))
 }
-#Thus, the following code assumes that you have already:
+#The following code assumes that you have already:
 #1. downloaded the NHANES minute-epoch file and saved it somewhere (like a USB)
 #2. have split the minute-epoch file by SEQN and saved each as an individual csv file in a folder
 #########################################################
@@ -57,11 +57,11 @@ library(nparACT)
 #load the header data; this has starttime and stoptime time stamp data
 # we can use this to fill in time so that each row has a corresponding time stamp
 header11 <- read_xpt("https://wwwn.cdc.gov/Nchs/Nhanes/2011-2012/PAXHD_G.XPT") 
-#2011 data has n=7,821 people
+#2011 data has n=7,821 rows, but n=904 people missing PAM data 
 #provide the path info for where the individual csv files that you already created are stored:
 #NOTE: replace location in "path=" to your path 
 filenames <- list.files(path="E:/individual_files_2011", pattern=".*csv") 
-length(filenames) #[1] 6917 individual files
+length(filenames) #[1] n=6917 individual files
 act_file <- paste0("E:/individual_files_2011/",filenames)
 ###########################################################
 #create list objects to store output
@@ -72,6 +72,7 @@ out4<-list()
 for(chr in act_file) {
   nhanes_act <- read.csv(chr)
   try({ 
+    #if wanting to match header timestamp to individual long format data:
     nhanes_act$start_time <- header11$PAXFTIME[match(nhanes_act$SEQN, header11$SEQN)]
     nhanes_act$end_time <- header11$PAXETLDY[match(nhanes_act$SEQN, header11$SEQN)]
     start <- nhanes_act[1,18]
@@ -91,11 +92,11 @@ for(chr in act_file) {
     
     start2 <- as.POSIXlt(nhanes_act[1,23],format='%Y-%m-%d %H:%M:%S', tz="GMT")
     end2 <- as.POSIXlt(end_date2,format='%Y-%m-%d %H:%M:%S', tz="GMT")
-    #for those with differing number of rows, need to create row time based on how many rows are in dataset
+    #for those with differing number of rows (NHANES documentation), create row time based on # rows in dataset
     rows <- as.numeric(nrow(nhanes_act))
     end3 <- as.POSIXlt(format(strptime(start2, format = "%Y-%m-%d %H:%M:%S") + (rows-1)*60, "%Y-%m-%d %H:%M:%S"), tz="GMT")
-    #now fill in the blanks so no NA for nparact
-    nhanes_act$time <- try(seq(start2, end3, by = "mins")) #some files are missing rows of data
+    #fill in 
+    nhanes_act$time <- try(seq(start2, end3, by = "mins")) #may be missing rows of time (NHANES documentation)
     #for these, change end time to be based on row numbers - 1 min 
     if("try-error" %in% class(nhanes_act$time)) alternativeFunction(seq(start2, end3, by = "mins"))
    #Incorporate some data quality flags:
@@ -125,17 +126,16 @@ for(chr in act_file) {
     nhanes_t$offwrist <- as.integer(ifelse((is.na(nhanes_t$activity_na)), 1, 0))
     nhanes_t$day <- ((as.numeric(nhanes_t$PAXDAYM))-1)
     nhanes_t$dayofweek <- as.numeric(nhanes_t$PAXDAYWM)
-    #need to convert row by day
+    #convert row by day
     nhanes_t$hms <- substring(nhanes_t$time, 12)
     #############################################
     #output variables of interest
-    #need to format label - condense so that each day has its own row
+    #format label - condense so that each day has its own row
     label <- nhanes_t[c("SEQN", "day", "dayofweek")]
-    # label <- mesa_actc[c("mesaid", "dayofweek", "daybymidnight")]
     label$rowvars <- paste0(nhanes_t$SEQN,".",nhanes_t$day)
     label2 <-  label %>% group_by(rowvars) %>% slice(1)
     label2$rowvars<- NULL
-    #need to create an offwrist dataset that matches dimensions of light dataset
+    #create an offwrist dataset that matches dimensions of light dataset
     nhanes_t3 <- nhanes_t[c("SEQN", "offwrist", "day", "hms")]
     offwrist <- reshape(nhanes_t3, idvar ="hms",v.names="offwrist", timevar = "day", direction = "wide")
     rownames(offwrist) <- NULL
@@ -172,7 +172,7 @@ load("accelmissing_2011_out2.RData")
 label <- do.call(rbind, lapply(out2, data.frame))
 offwrist <- do.call(rbind, lapply(out3, data.frame))
 activity <- do.call(rbind, lapply(out4, data.frame))
-#read in NHANES 2011 demographic data
+#read in NHANES 2011 demographic data for imputation
 #########################
 demo11 <- read_xpt(url("https://wwwn.cdc.gov/Nchs/Nhanes/2011-2012/DEMO_G.XPT")) #demographics
 demo11$sex <- ifelse(demo11$RIAGENDR==1, 1, 0) #male=1, female=0
@@ -189,7 +189,6 @@ demo <- demo11[vars]
 idv <- unique(label$SEQN) 
 demo1 <- as.data.frame(demo[demo$SEQN %in% as.character(idv),])#there are 6676 from demo 
 ###########################
-#label$day<- NULL
 label$day <- as.integer(label$day)
 label$dayofweek <- as.integer(label$dayofweek)
 label$day <- NULL #getting rid of for now; only supposed to be N x 2 matrix with ID and dayofweek
@@ -203,8 +202,7 @@ is.data.frame(actdata$PA)
 #evaluate missingness and create missing flag matrix
 ######################################################
 #accelmissing cannot handle NAs
-#all NA values should be changed to 0
-#and we will create a flag matrix using a window of 60 minutes 
+#all NA values changed to 0 and create a flag matrix using a window of 60 minutes 
 load("acceldata_11.RData") #2011 data
 #replace NA values with 0
 actdata$PA[is.na(actdata$PA)] <- 0
@@ -216,7 +214,6 @@ mr$total
 #2011 = 11.1% for midnight-midnight when missing window defined as 60 min 0 counts
 ## missing proportion by days
 mean(mr$table < 0.1) 
-#2011 = 0.7828255
 #PLOT wearing proportion over time 
 wear.time.plot(PA=actdata$PA, label=actdata$label, flag=flag60, mark.missing=1)
 # data filtering for valid days
@@ -315,15 +312,12 @@ for(chr in ids) {
     npar_a <- data.frame(imp1_long)
     # nparact function:
     npar_a_output11 <- nparACT_base("npar_a", 1/60, cutoff = 1, plot = F, fulldays = F)
-    # Write new data to a new excel file:
-    #THIS IS WITH IMPUTED NA values
-    #write.table(npar_a_output11, "npar_a_Results_imp1_11.csv", append = TRUE, sep = ",", row.names = paste(chr), col.names = FALSE)
-    
+    # Write RAR metrics data (from imputed activity data) to a new excel file:
+    write.table(npar_a_output11, "npar_a_Results_imp1_11.csv", append = TRUE, sep = ",", row.names = paste(chr), col.names = FALSE)
   })
 }
 
-
 #*IMPORTANT*
-#*repeat this code for additional sets of files - imp2, imp3, imp4, and imp5 and save results
-
+#*repeat this code for additional sets of files (alter naming as necessary) - imp2, imp3, imp4, and imp5 - and save results
+#*repeat steps for 2013 data
 ###########################################
