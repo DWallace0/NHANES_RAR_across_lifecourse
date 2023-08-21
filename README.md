@@ -23,6 +23,6 @@ Data download, pre-processing, imputation with “accelmissing”, and creation 
 
 - “actdata2” files = the results after filtering the “acceldata” file through accelmissing to create a missing flag matrix and provide some information on amount missingness; data filtered for quality / number of valid days. This is the file used for imputation. 
 
-- “sensitivity_IDs” file = subset of IDs using more stringent criteria where valid day defined as at least 20 hours of wearing and 6+ valid days (compared to the original valid day defined as 16 hours of wearing and 4+ valid days)
+- “sensitivity_IDs” file = subset of IDs using more stringent criteria where valid day defined as at least 20 hours of wearing and 6+ valid days 
 
 - “accelimp” file = the imputed datasets after running accelmissing; these data will be fed into nparact to derive the RAR metrics
